@@ -1,6 +1,12 @@
-mod elfdef;
+#![allow(non_camel_case_types)]
+
+
+use machine::to_host_addr;
+
+mod elf;
 mod machine;
 mod mmu;
+mod utils;
 
 fn main() {
     if std::env::args().len() < 2 {
@@ -13,7 +19,7 @@ fn main() {
         } else {
             let mut machine: machine::machine_t = machine::machine_t::new();
             machine.machine_load_program(&arg);
-            println!("entry: {:#x}", machine.get_mmu_entry());
+            println!("entry: {:#x}", to_host_addr(machine.get_mmu_entry()));
         }
     }
 }

@@ -1,5 +1,15 @@
-use std::{fs, path::Path};
+use std::fs::File;
 use crate::mmu::mmu_t;
+
+const GUEST_MEMORY_OFFSET: u64 = 0x0888_0000_0000;
+
+pub fn to_host_addr(addr: u64) -> u64 {
+    addr + GUEST_MEMORY_OFFSET
+}
+
+pub fn to_guest_addr(addr: u64) -> u64 {
+    addr - GUEST_MEMORY_OFFSET
+}
 
 struct state_t {
     gp_regs: [u64; 32],
@@ -22,13 +32,12 @@ impl machine_t {
         }
     }
     pub fn machine_load_program(&mut self, prog_path_str: &str){
-        let path = Path::new(prog_path_str);
-        let elf = match fs::read(path) {
-            Ok(elf) => elf,
-            Err(e) => panic!("Error reading file: {}", e),
+        let mut elf_file = match File::open(prog_path_str) {
+            Ok(elf_file) => elf_file,
+            Err(e) => panic!("Error opening file: {}", e),
         };
-        
-        self.mmu.mmu_load_elf(&elf);
+
+        self.mmu.mmu_load_elf(&mut elf_file);
 
         self.state.pc = self.mmu.get_entry();
     }
