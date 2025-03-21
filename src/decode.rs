@@ -10,6 +10,6 @@ pub fn insn_decode(insn: &insn_t, data: u32) {
         0x1 => panic!("Not implemented"),
         0x2 => panic!("Not implemented"),
         0x3 => panic!("Not implemented"),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }

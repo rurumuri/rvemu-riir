@@ -1,6 +1,10 @@
-use std::{fs::File, io::{Read, Seek}, mem};
+use std::{
+    fs::File,
+    io::{Read, Seek},
+    mem,
+};
 
-use libc::{PROT_READ, PROT_WRITE, PROT_EXEC};
+use libc::{PROT_EXEC, PROT_READ, PROT_WRITE};
 
 pub const EI_NIDENT: usize = 16;
 pub const ELFMAG: &str = "\x7FELF";
@@ -34,7 +38,7 @@ pub struct elf64_ehdr_t {
     pub e_phnum: u16,
     pub e_shentsize: u16,
     pub e_shnum: u16,
-    pub e_shstrndx: u16
+    pub e_shstrndx: u16,
 }
 
 #[repr(C)]
@@ -46,19 +50,20 @@ pub struct elf64_phdr_t {
     pub p_paddr: u64,
     pub p_filesz: u64,
     pub p_memsz: u64,
-    pub p_align: u64
+    pub p_align: u64,
 }
 
 pub fn flags_to_mmap_prot(flags: u32) -> i32 {
-    (if flags & PF_R != 0 { PROT_READ } else { 0 }) |
-    (if flags & PF_W != 0 { PROT_WRITE } else { 0 }) |
-    (if flags & PF_X != 0 { PROT_EXEC } else { 0 })
+    (if flags & PF_R != 0 { PROT_READ } else { 0 })
+        | (if flags & PF_W != 0 { PROT_WRITE } else { 0 })
+        | (if flags & PF_X != 0 { PROT_EXEC } else { 0 })
 }
 
 impl elf64_phdr_t {
     pub fn load_phdr(&mut self, ehdr_t: &elf64_ehdr_t, phdr_index: i64, elf: &mut File) {
-        elf.seek_relative(ehdr_t.e_phoff as i64 + phdr_index * ehdr_t.e_phentsize as i64).unwrap();
-    
+        elf.seek_relative(ehdr_t.e_phoff as i64 + phdr_index * ehdr_t.e_phentsize as i64)
+            .unwrap();
+
         let mut buf_phdr_t = [0; mem::size_of::<elf64_phdr_t>()];
         elf.read_exact(&mut buf_phdr_t).unwrap();
         *self = unsafe { mem::transmute(buf_phdr_t) };

@@ -5,10 +5,10 @@ pub struct insn_t {
     pub imm: i32,
     pub type_: insn_type_t,
     pub rvc: bool,
-    pub cont: bool
+    pub cont: bool,
 }
 
 pub enum insn_type_t {
     insn_addi,
-    num_insns
+    num_insns,
 }

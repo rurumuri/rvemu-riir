@@ -1,6 +1,6 @@
+use crate::{interp::exec_block_interp, mmu::mmu_t};
 use core::panic;
 use std::fs::File;
-use crate::{interp::exec_block_interp, mmu::mmu_t};
 
 const GUEST_MEMORY_OFFSET: u64 = 0x0888_0000_0000;
 
@@ -17,7 +17,7 @@ pub enum exit_reason_t {
     none,
     direct_branch,
     indirect_branch,
-    ecall
+    ecall,
 }
 
 pub struct state_t {
@@ -42,7 +42,7 @@ impl machine_t {
             mmu: mmu_t::new(),
         }
     }
-    pub fn machine_load_program(&mut self, prog_path_str: &str){
+    pub fn machine_load_program(&mut self, prog_path_str: &str) {
         let mut elf_file = match File::open(prog_path_str) {
             Ok(elf_file) => elf_file,
             Err(e) => panic!("Error opening file: {}", e),
@@ -68,5 +68,4 @@ impl machine_t {
         assert_eq!(self.state.exit_reason, exit_reason_t::ecall);
         exit_reason_t::ecall
     }
-
 }

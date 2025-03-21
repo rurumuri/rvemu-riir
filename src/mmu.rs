@@ -1,5 +1,14 @@
-use std::{cmp, fs::File, io::{Read, Seek}, mem, os::fd::AsRawFd};
-use crate::{machine::{to_guest_addr, to_host_addr}, utils::{round_down, round_up}};
+use crate::{
+    machine::{to_guest_addr, to_host_addr},
+    utils::{round_down, round_up},
+};
+use std::{
+    cmp,
+    fs::File,
+    io::{Read, Seek},
+    mem,
+    os::fd::AsRawFd,
+};
 
 use crate::elf::*;
 
@@ -7,7 +16,7 @@ pub struct mmu_t {
     entry: u64,
     host_alloc: u64,
     alloc: u64,
-    base: u64
+    base: u64,
 }
 
 impl mmu_t {
@@ -16,7 +25,7 @@ impl mmu_t {
             entry: 0,
             host_alloc: 0,
             alloc: 0,
-            base: 0
+            base: 0,
         }
     }
     pub fn mmu_load_elf(&mut self, elf: &mut File) {
@@ -43,7 +52,7 @@ impl mmu_t {
         let mut phdr_t: elf64_phdr_t = unsafe { mem::zeroed() };
         for i in 0..ehdr.e_phnum {
             elf.seek(std::io::SeekFrom::Start(0)).unwrap();
-            phdr_t.load_phdr( ehdr, i as i64, elf);
+            phdr_t.load_phdr(ehdr, i as i64, elf);
             if phdr_t.p_type == PT_LOAD {
                 self.mmu_load_segment(&phdr_t, elf);
             }
@@ -69,7 +78,7 @@ impl mmu_t {
                 prot,
                 libc::MAP_PRIVATE | libc::MAP_FIXED,
                 elf.as_raw_fd() as i32,
-                round_down(offset, page_size as u64) as libc::off_t
+                round_down(offset, page_size as u64) as libc::off_t,
             ) as u64
         };
         assert_eq!(addr, aligned_vaddr);
@@ -83,13 +92,19 @@ impl mmu_t {
                     prot,
                     libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_FIXED,
                     -1,
-                    0
+                    0,
                 ) as usize
             };
-            assert_eq!(addr, aligned_vaddr as usize + round_up(filesz, page_size as u64) as usize);
+            assert_eq!(
+                addr,
+                aligned_vaddr as usize + round_up(filesz, page_size as u64) as usize
+            );
         }
 
-        self.host_alloc = cmp::max(self.host_alloc, aligned_vaddr + round_up(memsz, page_size as u64) as u64);
+        self.host_alloc = cmp::max(
+            self.host_alloc,
+            aligned_vaddr + round_up(memsz, page_size as u64) as u64,
+        );
         self.alloc = to_guest_addr(self.host_alloc);
         self.base = to_guest_addr(self.host_alloc);
     }

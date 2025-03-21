@@ -1,16 +1,15 @@
 #![allow(non_camel_case_types)]
 
-
 use machine::exit_reason_t;
 
+mod decode;
 mod elf;
+mod insn;
+mod interp;
 mod machine;
 mod mmu;
-mod utils;
-mod decode;
-mod insn;
 mod reg;
-mod interp;
+mod utils;
 
 fn main() {
     if std::env::args().len() < 2 {
