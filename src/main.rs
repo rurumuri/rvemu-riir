@@ -1,12 +1,16 @@
 #![allow(non_camel_case_types)]
 
 
-use machine::to_host_addr;
+use machine::exit_reason_t;
 
 mod elf;
 mod machine;
 mod mmu;
 mod utils;
+mod decode;
+mod insn;
+mod reg;
+mod interp;
 
 fn main() {
     if std::env::args().len() < 2 {
@@ -19,7 +23,11 @@ fn main() {
         } else {
             let mut machine: machine::machine_t = machine::machine_t::new();
             machine.machine_load_program(&arg);
-            println!("entry: {:#x}", to_host_addr(machine.get_mmu_entry()));
+
+            loop {
+                let reason: exit_reason_t = machine.machine_step();
+                assert_eq!(reason, exit_reason_t::ecall);
+            }
         }
     }
 }

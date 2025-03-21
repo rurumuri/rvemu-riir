@@ -1,5 +1,6 @@
+use core::panic;
 use std::fs::File;
-use crate::mmu::mmu_t;
+use crate::{interp::exec_block_interp, mmu::mmu_t};
 
 const GUEST_MEMORY_OFFSET: u64 = 0x0888_0000_0000;
 
@@ -11,9 +12,18 @@ pub fn to_guest_addr(addr: u64) -> u64 {
     addr - GUEST_MEMORY_OFFSET
 }
 
-struct state_t {
-    gp_regs: [u64; 32],
-    pc: u64,
+#[derive(PartialEq, Debug)]
+pub enum exit_reason_t {
+    none,
+    direct_branch,
+    indirect_branch,
+    ecall
+}
+
+pub struct state_t {
+    pub exit_reason: exit_reason_t,
+    pub gp_regs: [u64; 32],
+    pub pc: u64,
 }
 
 pub struct machine_t {
@@ -25,6 +35,7 @@ impl machine_t {
     pub fn new() -> machine_t {
         machine_t {
             state: state_t {
+                exit_reason: exit_reason_t::none,
                 gp_regs: [0; 32],
                 pc: 0,
             },
@@ -44,4 +55,18 @@ impl machine_t {
     pub fn get_mmu_entry(&self) -> u64 {
         self.mmu.get_entry()
     }
+    pub fn machine_step(&mut self) -> exit_reason_t {
+        loop {
+            exec_block_interp(&mut self.state);
+
+            match self.state.exit_reason {
+                exit_reason_t::indirect_branch | exit_reason_t::direct_branch => continue,
+                _ => break,
+            }
+        }
+
+        assert_eq!(self.state.exit_reason, exit_reason_t::ecall);
+        exit_reason_t::ecall
+    }
+
 }
