@@ -4,10 +4,12 @@ use std::fs::File;
 
 const GUEST_MEMORY_OFFSET: u64 = 0x0888_0000_0000;
 
+#[inline]
 pub fn to_host_addr(addr: u64) -> u64 {
     addr + GUEST_MEMORY_OFFSET
 }
 
+#[inline]
 pub fn to_guest_addr(addr: u64) -> u64 {
     addr - GUEST_MEMORY_OFFSET
 }
@@ -51,9 +53,6 @@ impl machine_t {
         self.mmu.mmu_load_elf(&mut elf_file);
 
         self.state.pc = self.mmu.get_entry();
-    }
-    pub fn get_mmu_entry(&self) -> u64 {
-        self.mmu.get_entry()
     }
     pub fn machine_step(&mut self) -> exit_reason_t {
         loop {

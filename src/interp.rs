@@ -8,10 +8,10 @@ use crate::{
 };
 
 pub fn exec_block_interp(state: &mut state_t) {
-    static insn: insn_t = unsafe { mem::zeroed() };
     loop {
+        let mut insn: insn_t = unsafe { mem::zeroed() };
         let insn_data = unsafe { *(to_host_addr(state.pc) as *const u64) as u32 };
-        insn_decode(&insn, insn_data);
+        insn_decode(&mut insn, insn_data);
 
         match insn.type_ {
             insn_type_t::insn_addi => panic!("Not implemented"),
