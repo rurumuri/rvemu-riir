@@ -1,4 +1,4 @@
-use crate::{interp::exec_block_interp, mmu::mmu_t};
+use crate::{interp::exec_block_interp, mmu::mmu_t, reg::{fp_reg_type_t, gp_reg_type_t}};
 use core::panic;
 use std::fs::File;
 
@@ -24,7 +24,9 @@ pub enum exit_reason_t {
 
 pub struct state_t {
     pub exit_reason: exit_reason_t,
-    pub gp_regs: [u64; 32],
+    pub reenter_pc: u64,
+    pub gp_regs: [u64; gp_reg_type_t::num_gp_regs as usize],
+    pub fp_regs: [f64; fp_reg_type_t::num_fp_regs as usize],
     pub pc: u64,
 }
 
@@ -38,7 +40,9 @@ impl machine_t {
         machine_t {
             state: state_t {
                 exit_reason: exit_reason_t::none,
-                gp_regs: [0; 32],
+                reenter_pc: 0,
+                gp_regs: [0; gp_reg_type_t::num_gp_regs as usize],
+                fp_regs: [0.0; fp_reg_type_t::num_fp_regs as usize],
                 pc: 0,
             },
             mmu: mmu_t::new(),
@@ -56,14 +60,20 @@ impl machine_t {
     }
     pub fn machine_step(&mut self) -> exit_reason_t {
         loop {
+            self.state.exit_reason = exit_reason_t::none;
             exec_block_interp(&mut self.state);
+            assert_ne!(self.state.exit_reason, exit_reason_t::none);
 
             match self.state.exit_reason {
-                exit_reason_t::indirect_branch | exit_reason_t::direct_branch => continue,
+                exit_reason_t::indirect_branch | exit_reason_t::direct_branch => {
+                    self.state.pc = self.state.reenter_pc;
+                    continue;
+                },
                 _ => break,
             }
         }
 
+        self.state.pc = self.state.reenter_pc;
         assert_eq!(self.state.exit_reason, exit_reason_t::ecall);
         exit_reason_t::ecall
     }

@@ -7,3 +7,25 @@ pub enum gp_reg_type_t {
     t3, t4, t5, t6,
     num_gp_regs,
 }
+
+pub enum fp_reg_type_t {
+    ft0, ft1, ft2, ft3, ft4, ft5, ft6, ft7,
+    fs0, fs1,
+    fa0, fa1, fa2, fa3, fa4, fa5, fa6, fa7,
+    fs2, fs3, fs4, fs5, fs6, fs7, fs8, fs9, fs10, fs11,
+    ft8, ft9, ft10, ft11,
+    num_fp_regs,
+}
+
+pub union fp_reg_t {
+    v: u64,
+    w: u32,
+    d: f64,
+    f: f32,
+}
+
+pub enum csr_t {
+    fflags = 0x001,
+    frm    = 0x002,
+    fcsr   = 0x003,
+}
