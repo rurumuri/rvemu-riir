@@ -1,17 +1,4 @@
 
-/// Represents an instruction in the RISC-V emulator.
-/// 
-/// # Fields
-/// 
-/// * `rd` - Destination register.
-/// * `rs1` - First source register.
-/// * `rs2` - Second source register.
-/// * `rs3` - Third source register.
-/// * `imm` - Immediate value.
-/// * `csr` - Control and Status Register.
-/// * `type_` - Type of the instruction.
-/// * `rvc` - Indicates if the instruction is a compressed instruction.
-/// * `cont` - Indicates if the instruction is a continuation.
 pub struct insn_t {
     pub rd: u8,
     pub rs1: u8,
@@ -24,6 +11,7 @@ pub struct insn_t {
     pub cont: bool,         // If is a continuation
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum insn_type_t {
     insn_lb, insn_lh, insn_lw, insn_ld, insn_lbu, insn_lhu, insn_lwu,
     insn_fence, insn_fence_i,
