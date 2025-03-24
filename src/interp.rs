@@ -1007,9 +1007,7 @@ static interp_funcs: [interp_func_t; insn_type_t::num_insns as usize] = [
 pub fn exec_block_interp(state: &mut state_t) {
     loop {
         let mut insn: insn_t = unsafe { mem::zeroed() };
-        // let insn_data = unsafe { *(to_host_addr(state.pc) as *const u64) as u32 };
-        let insn_data = unsafe { *(to_host_addr(state.pc) as *const u32) };
-
+        let insn_data = unsafe { std::ptr::read_unaligned(to_host_addr(state.pc) as *const u64) } as u32;
         insn_decode(&mut insn, insn_data);
 
         interp_funcs[insn.type_ as usize](state, &mut insn);
