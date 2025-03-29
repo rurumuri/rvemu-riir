@@ -108,4 +108,50 @@ impl mmu_t {
         self.alloc = to_guest_addr(self.host_alloc);
         self.base = to_guest_addr(self.host_alloc);
     }
+
+    pub fn mmu_alloc(&mut self, size: i64) -> u64 {
+        let page_size: usize = page_size::get();
+        let base: u64 = self.alloc;
+        assert!(base >= self.base);
+
+        self.alloc = self.alloc.wrapping_add_signed(size);
+        assert!(self.alloc >= self.base);
+
+        if size > 0 && self.alloc > to_guest_addr(self.host_alloc) {
+
+            if unsafe { libc::mmap(
+                self.host_alloc as *mut libc::c_void,
+                round_up(size.abs() as u64, page_size as u64) as usize,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_FIXED,
+                -1,
+                0,
+            ) } == libc::MAP_FAILED {
+                panic!("mmap failed");
+            }
+
+            self.host_alloc += round_up(size.abs() as u64, page_size as u64);
+        } else if size < 0
+            && round_up(self.alloc, page_size as u64) < to_guest_addr(self.host_alloc)
+        {
+            let len: u64 = to_guest_addr(self.host_alloc) - round_up(self.alloc, page_size as u64);
+            if unsafe { libc::munmap(self.host_alloc as *mut libc::c_void, len as usize) } == -1 {
+                panic!("munmap failed");
+            }
+            self.host_alloc -= len;
+        }
+        assert_eq!(self.alloc, base + size.abs() as u64);
+        base
+    }
+
+    #[inline]
+    pub fn mmu_write(addr: u64, data: &[u8]) {
+        unsafe {
+            let res = libc::memcpy(
+                to_host_addr(addr) as *mut libc::c_void,
+                data.as_ptr() as *const libc::c_void,
+                data.len(),
+            );
+        };
+    }
 }

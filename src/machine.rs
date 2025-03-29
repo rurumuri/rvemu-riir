@@ -83,4 +83,43 @@ impl machine_t {
         assert_eq!(self.state.exit_reason, exit_reason_t::ecall);
         exit_reason_t::ecall
     }
+    pub fn machine_setup(&mut self, argc: u64, argv: &[&str]) {
+        let stack_size: usize = 32 * 1024 * 1024;
+        let stack: u64 = self.mmu.mmu_alloc(stack_size as i64);
+        self.state.gp_regs[gp_reg_type_t::sp as usize] = stack + stack_size as u64; // goto stack bottom
+
+        self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // auxv
+        self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // envp
+        self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // argv end
+
+        let args = argc - 1;
+
+        for i in (1..=args).rev() {
+            let len: usize = argv[i as usize].len();
+            let addr: u64 = self.mmu.mmu_alloc((len + 1) as i64);
+            mmu_t::mmu_write(addr, argv[i as usize].as_bytes());
+            self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // argv[i]
+            mmu_t::mmu_write(
+                self.state.gp_regs[gp_reg_type_t::sp as usize],
+                &(addr.to_le_bytes()),
+            );
+        }
+
+        self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // argc
+        mmu_t::mmu_write(
+            self.state.gp_regs[gp_reg_type_t::sp as usize],
+            &args.to_le_bytes(),
+        );
+    }
+
+
+    #[inline]
+    pub fn machine_get_gp_reg(&mut self, reg: gp_reg_type_t) -> u64 {
+        self.state.gp_regs[reg as usize]
+    }
+
+    #[inline]
+    pub fn machine_set_gp_reg(&mut self, reg: gp_reg_type_t, val: u64) {
+        self.state.gp_regs[reg as usize] = val;
+        }
 }
