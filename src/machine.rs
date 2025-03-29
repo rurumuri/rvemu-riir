@@ -37,8 +37,8 @@ pub struct state_t {
 
 #[repr(C)]
 pub struct machine_t {
-    state: state_t,
-    mmu: mmu_t,
+    pub state: state_t,
+    pub mmu: mmu_t,
 }
 
 impl machine_t {

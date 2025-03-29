@@ -19,7 +19,8 @@ fn func_empty(state: &mut state_t, insn: &mut insn_t) {
 
 fn func_load_template<T: Into<i64> + Copy>(state: &mut state_t, insn: &mut insn_t) {
     let addr: u64 = (state.gp_regs[insn.rs1 as usize] as i64 + insn.imm as i64) as u64; // I'm not sure if this is correct
-    state.gp_regs[insn.rd as usize] = unsafe { (*(to_host_addr(addr) as *const T)).into() as u64 };
+    state.gp_regs[insn.rd as usize] =
+        unsafe { std::ptr::read_unaligned::<T>(to_host_addr(addr) as *const T).into() } as u64;
 }
 
 fn func_loadu_template<T: Into<u64> + Copy>(state: &mut state_t, insn: &mut insn_t) {
@@ -477,11 +478,11 @@ fn func_csrrci(state: &mut state_t, insn: &mut insn_t) {
     other instructions
 */
 fn func_lui(state: &mut state_t, insn: &mut insn_t) {
-    state.gp_regs[insn.rd as usize] = (insn.imm as u64) << 12;
+    state.gp_regs[insn.rd as usize] = insn.imm as u64;
 }
 
 fn func_auipc(state: &mut state_t, insn: &mut insn_t) {
-    state.gp_regs[insn.rd as usize] = state.pc + ((insn.imm as u64) << 12);
+    state.gp_regs[insn.rd as usize] = state.pc + insn.imm as u64;
 }
 
 fn func_ecall(state: &mut state_t, insn: &mut insn_t) {
@@ -1007,7 +1008,7 @@ static interp_funcs: [interp_func_t; insn_type_t::num_insns as usize] = [
 pub fn exec_block_interp(state: &mut state_t) {
     loop {
         let mut insn: insn_t = unsafe { mem::zeroed() };
-        let insn_data = unsafe { std::ptr::read_unaligned(to_host_addr(state.pc) as *const u64) } as u32;
+        let insn_data = unsafe { std::ptr::read_unaligned(to_host_addr(state.pc) as *const u32) };
         insn_decode(&mut insn, insn_data);
 
         interp_funcs[insn.type_ as usize](state, &mut insn);

@@ -34,6 +34,7 @@ pub enum gp_reg_type_t {
     num_gp_regs,
 }
 
+#[derive(Debug)]
 pub enum fp_reg_type_t {
     ft0,
     ft1,
