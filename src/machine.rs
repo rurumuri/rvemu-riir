@@ -112,6 +112,9 @@ impl machine_t {
         );
     }
 
+    pub fn do_syscall(&mut self, syscall_num: u64) -> ! {
+        panic!("Unimplemented syscall");
+    }
 
     #[inline]
     pub fn machine_get_gp_reg(&mut self, reg: gp_reg_type_t) -> u64 {
@@ -121,5 +124,5 @@ impl machine_t {
     #[inline]
     pub fn machine_set_gp_reg(&mut self, reg: gp_reg_type_t, val: u64) {
         self.state.gp_regs[reg as usize] = val;
-        }
+    }
 }
