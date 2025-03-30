@@ -13,10 +13,10 @@ use std::{
 use crate::elf::*;
 
 pub struct mmu_t {
-    entry: u64,
-    host_alloc: u64,
-    alloc: u64,
-    base: u64,
+    pub entry: u64,
+    pub host_alloc: u64,
+    pub alloc: u64,
+    pub base: u64,
 }
 
 impl mmu_t {

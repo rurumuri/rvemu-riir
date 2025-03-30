@@ -434,7 +434,7 @@ impl insn_t {
 
         let imm = (imm6 << 6) | (imm2 << 2) | (imm53 << 3);
 
-        self.imm = (imm as i32) << 27 >> 27;
+        self.imm = ((imm as u32) << 25 >> 25) as i32;
         self.rs1 = rp1(data) + 8;
         self.rs2 = rp2(data) + 8;
         self.rvc = true;
@@ -471,7 +471,7 @@ impl insn_t {
 
         let imm = (imm6 << 6) | (imm2 << 2) | (imm53 << 3);
 
-        self.imm = (imm as i32) << 27 >> 27;
+        self.imm = ((imm as u32) << 25 >> 25) as i32;
         self.rs1 = rp1(data) + 8;
         self.rd = rp2(data) + 8;
         self.rvc = true;
@@ -484,7 +484,7 @@ impl insn_t {
 
         let imm = (imm76 << 6) | (imm53 << 3);
 
-        self.imm = ((imm as u32) << 27 >> 27) as i32;
+        self.imm = ((imm as u32) << 24 >> 24) as i32;
         self.rs1 = rp1(data) + 8;
         self.rd = rp2(data) + 8;
         self.rvc = true;
@@ -523,7 +523,7 @@ impl insn_t {
 
         let imm = (imm3 << 3) | (imm2 << 2) | (imm96 << 6) | (imm54 << 4);
 
-        self.imm = (imm as i32) << 24 >> 24;
+        self.imm = ((imm as u32) << 22 >> 22) as i32;
         self.rd = rp2(data) + 8;
         self.rvc = true;
     }

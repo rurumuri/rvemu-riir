@@ -1,7 +1,7 @@
 use crate::{
     interp::exec_block_interp,
     mmu::mmu_t,
-    reg::{fp_reg_t, fp_reg_type_t, gp_reg_type_t},
+    reg::{fp_reg_t, fp_reg_type_t, gp_reg_type_t}, syscall::{syscall_t, OLD_SYSCALL_TABLE, OLD_SYSCALL_THRESHOLD, SYSCALL_TABLE},
 };
 use core::panic;
 use std::fs::File;
@@ -84,9 +84,18 @@ impl machine_t {
         exit_reason_t::ecall
     }
     pub fn machine_setup(&mut self, argc: u64, argv: &[&str]) {
+        println!("sysx {:#x}", self.mmu.alloc);
+
         let stack_size: usize = 32 * 1024 * 1024;
         let stack: u64 = self.mmu.mmu_alloc(stack_size as i64);
+
+        // println!(">>>>111: {}", unsafe {*(0x088800012c68 as *const u64)});
+        // println!(">>>>222: {}", unsafe {*(0x088802012fd8 as *const u64)});
+
+        // println!(">>>>>Stack: {:#x}", stack);
         self.state.gp_regs[gp_reg_type_t::sp as usize] = stack + stack_size as u64; // goto stack bottom
+
+        // println!(">>>>{:x}", self.state.gp_regs[gp_reg_type_t::sp as usize]);
 
         self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // auxv
         self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // envp
@@ -95,14 +104,20 @@ impl machine_t {
         let args = argc - 1;
 
         for i in (1..=args).rev() {
+            println!("sysx {}: {}", i, argv[i as usize]);
             let len: usize = argv[i as usize].len();
+            println!("sysx {:#x}", self.mmu.alloc);
+
             let addr: u64 = self.mmu.mmu_alloc((len + 1) as i64);
+            println!("sysx {:#x}", self.mmu.alloc);
+
             mmu_t::mmu_write(addr, argv[i as usize].as_bytes());
             self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // argv[i]
             mmu_t::mmu_write(
                 self.state.gp_regs[gp_reg_type_t::sp as usize],
                 &(addr.to_le_bytes()),
             );
+            // println!(">{:x}", self.state.gp_regs[gp_reg_type_t::sp as usize]);
         }
 
         self.state.gp_regs[gp_reg_type_t::sp as usize] -= 8; // argc
@@ -110,10 +125,28 @@ impl machine_t {
             self.state.gp_regs[gp_reg_type_t::sp as usize],
             &args.to_le_bytes(),
         );
+        // println!(">>>>{:x}", self.state.gp_regs[gp_reg_type_t::sp as usize]);
+
+        // println!(">>>>{:x}", self.state.gp_regs[gp_reg_type_t::sp as usize]);
     }
 
-    pub fn do_syscall(&mut self, syscall_num: u64) -> ! {
-        panic!("Unimplemented syscall");
+    pub fn do_syscall(&mut self, syscall_num: u64) -> u64 {
+        println!("syscall: {}", syscall_num);
+
+        let f: Option<syscall_t>;
+        if syscall_num as u32 <= *(SYSCALL_TABLE.keys().max().unwrap()) {
+            f = Some(SYSCALL_TABLE[&(syscall_num as u32)]);
+        } else if (syscall_num as u32 - OLD_SYSCALL_THRESHOLD) <= *(OLD_SYSCALL_TABLE.keys().max().unwrap()) {
+            f = Some(OLD_SYSCALL_TABLE[&(syscall_num as u32 - OLD_SYSCALL_THRESHOLD as u32)]);
+        } else {
+            f = None;
+        }
+
+        if let Some(f) = f {
+            f(self)
+        } else {
+            panic!("Unknown syscall: {}", syscall_num);
+        }
     }
 
     #[inline]

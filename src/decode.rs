@@ -6,6 +6,11 @@ fn quadrant(data: u32) -> u32 {
 }
 
 pub fn insn_decode(insn: &mut insn_t, data: u32) {
+    for i in (0..32).rev() {
+        let bit = (data >> i) & 1;
+        print!("{}", bit);
+    }
+    println!();
     let quadrant = quadrant(data);
     match quadrant {
         0x0 => {
@@ -29,6 +34,7 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                     insn.type_ = insn_type_t::insn_lw;
                 }
                 0x3 => {
+                    // C.FLW ?
                     // C.LD
                     insn.insn_cltype_read2(data as u16);
                     insn.type_ = insn_type_t::insn_ld;
@@ -62,6 +68,7 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                 }
                 0x1 => {
                     // C.ADDIW
+                    // println!("hit ! addiw");
                     insn.insn_citype_read(data as u16);
                     assert!(insn.rd != 0);
                     insn.rs1 = insn.rd;
@@ -83,6 +90,7 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                         insn.type_ = insn_type_t::insn_addi;
                     } else {
                         // C.LUI
+                        // println!("hit !");
                         insn.insn_citype_read5(data as u16);
                         assert!(insn.imm != 0);
                         insn.type_ = insn_type_t::insn_lui;
@@ -173,12 +181,14 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                 }
                 0x1 => {
                     // C.FLDSP
+                    // println!("hit ! c fldsp");
                     insn.insn_citype_read2(data as u16);
                     insn.rs1 = 2; // sp
                     insn.type_ = insn_type_t::insn_fld;
                 }
                 0x2 => {
                     // C.LWSP
+                    // println!("hit !");
                     insn.insn_citype_read4(data as u16);
                     assert!(insn.rd != 0);
                     insn.rs1 = 2; // sp
@@ -186,6 +196,7 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                 }
                 0x3 => {
                     // C.LDSP
+                    // println!("hit ! c ldsp");
                     insn.insn_citype_read2(data as u16);
                     assert!(insn.rd != 0);
                     insn.rs1 = 2; // sp
@@ -204,6 +215,7 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                                 insn.cont = true;
                             } else {
                                 // C.MV
+                                // println!("hit !");
                                 insn.rd = insn.rs1;
                                 insn.rs1 = 0; // zero
                                 insn.type_ = insn_type_t::insn_add;
@@ -216,6 +228,7 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                                 panic!("unimplemented C.EBREAK");
                             } else if insn.rs2 == 0 {
                                 // C.JALR
+                                // println!("hit !");
                                 insn.rd = 1; // ra
                                 insn.type_ = insn_type_t::insn_jalr;
                                 insn.cont = true;
@@ -299,7 +312,10 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                     let funct3 = funct3(data);
                     insn.insn_itype_read(data);
                     match funct3 {
-                        0x0 => insn.type_ = insn_type_t::insn_addi,
+                        0x0 => {
+                            insn.type_ = insn_type_t::insn_addi;
+                            // println!("hit !");
+                        }
                         0x1 => {
                             let imm116 = imm116(data);
                             if imm116 == 0 {
@@ -353,7 +369,10 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                     let funct3 = funct3(data);
                     insn.insn_stype_read(data);
                     match funct3 {
-                        0x0 => insn.type_ = insn_type_t::insn_sb,
+                        0x0 => {
+                            insn.type_ = insn_type_t::insn_sb;
+                            // println!("hit !");
+                        }
                         0x1 => insn.type_ = insn_type_t::insn_sh,
                         0x2 => insn.type_ = insn_type_t::insn_sw,
                         0x3 => insn.type_ = insn_type_t::insn_sd,
@@ -610,6 +629,7 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
                 }
                 0x1b => {
                     // JAL
+                    // println!("hit !");
                     insn.insn_jtype_read(data);
                     insn.type_ = insn_type_t::insn_jal;
                     insn.cont = true;
@@ -638,4 +658,8 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
         }
         _ => unreachable!(),
     }
+    // println!("insn_type={:?}", insn.type_ as insn_type_t);
+    // println!("type={:#}", insn.type_ as u32);
+    println!("{:?}", insn);
+    // println!("{} {} {} {} {} {} {} {} {}", insn.rd, insn.rs1, insn.rs2, insn.rs3, insn.imm, insn.csr, insn.type_ as u32, insn.rvc as u32, insn.cont as u32);
 }

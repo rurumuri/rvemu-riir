@@ -18,9 +18,26 @@ fn func_empty(state: &mut state_t, insn: &mut insn_t) {
 }
 
 fn func_load_template<T: Into<i64> + Copy>(state: &mut state_t, insn: &mut insn_t) {
+    // println!();
+    // println!("func_load_template invoked: state@{:x} insn@{:x}", state as *const state_t as u64, insn as *const insn_t as u64);
     let addr: u64 = (state.gp_regs[insn.rs1 as usize] as i64 + insn.imm as i64) as u64; // I'm not sure if this is correct
+    // println!("addr{} = {} + {}", addr, state.gp_regs[insn.rs1 as usize], insn.imm);
+    // println!("{}", std::any::type_name::<T>());
+
+    // for i in (0..32).rev() {
+    //     let bit = (insn.imm >> i) & 1;
+    //     print!("-{}", bit);
+    // }
+    // println!();
+
+    // println!("{}", unsafe { (*(to_host_addr(addr) as *const i8))});
+    // println!("{}", unsafe { (*(to_host_addr(addr) as *const i16))});
+    // println!("{}", unsafe { (*(to_host_addr(addr) as *const i32))});
+    // println!("{}", unsafe { (*(to_host_addr(addr) as *const i64))});
     state.gp_regs[insn.rd as usize] =
         unsafe { std::ptr::read_unaligned::<T>(to_host_addr(addr) as *const T).into() } as u64;
+    // state.gp_regs[insn.rd as usize] = unsafe { (*(to_host_addr(addr) as *const T)).into() as u64 };
+    println!("loaded {} from addr={:x}({})", unsafe { (*(to_host_addr(addr) as *const T)).into() as u64 }, to_host_addr(addr), addr);
 }
 
 fn func_loadu_template<T: Into<u64> + Copy>(state: &mut state_t, insn: &mut insn_t) {
@@ -64,8 +81,10 @@ fn func_ldu(state: &mut state_t, insn: &mut insn_t) {
     arithmetic instructions
 */
 fn func_addi(state: &mut state_t, insn: &mut insn_t) {
+    // println!("func_addi: [rs1]{} imm{} [rd]{}", state.gp_regs[insn.rs1 as usize], insn.imm, state.gp_regs[insn.rd as usize]);
     state.gp_regs[insn.rd as usize] =
         state.gp_regs[insn.rs1 as usize].wrapping_add(insn.imm as u64);
+    // println!("func_addi: [rs1]{} imm{} [rd]{}", state.gp_regs[insn.rs1 as usize], insn.imm, state.gp_regs[insn.rd as usize]);
 }
 
 fn func_slti(state: &mut state_t, insn: &mut insn_t) {
@@ -322,6 +341,7 @@ fn func_sraw(state: &mut state_t, insn: &mut insn_t) {
 fn func_sb(state: &mut state_t, insn: &mut insn_t) {
     let addr: u64 = (state.gp_regs[insn.rs1 as usize] as i64 + insn.imm as i64) as u64;
     let value: u8 = (state.gp_regs[insn.rs2 as usize] & 0xFF) as u8;
+    println!("saved {} to addr={:x}({})", value, to_host_addr(addr), addr);
     unsafe {
         let ptr = to_host_addr(addr) as *mut u8;
         std::ptr::write(ptr, value);
@@ -331,6 +351,7 @@ fn func_sb(state: &mut state_t, insn: &mut insn_t) {
 fn func_sh(state: &mut state_t, insn: &mut insn_t) {
     let addr: u64 = (state.gp_regs[insn.rs1 as usize] as i64 + insn.imm as i64) as u64;
     let value: u16 = (state.gp_regs[insn.rs2 as usize] & 0xFFFF) as u16;
+    println!("saved {} to addr={:x}({})", value, to_host_addr(addr), addr);
     unsafe {
         let ptr = to_host_addr(addr) as *mut u16;
         std::ptr::write(ptr, value);
@@ -340,6 +361,7 @@ fn func_sh(state: &mut state_t, insn: &mut insn_t) {
 fn func_sw(state: &mut state_t, insn: &mut insn_t) {
     let addr: u64 = (state.gp_regs[insn.rs1 as usize] as i64 + insn.imm as i64) as u64;
     let value: u32 = (state.gp_regs[insn.rs2 as usize] & 0xFFFFFFFF) as u32;
+    println!("saved {} to addr={:x}({})", value, to_host_addr(addr), addr);
     unsafe {
         let ptr = to_host_addr(addr) as *mut u32;
         std::ptr::write(ptr, value);
@@ -349,6 +371,7 @@ fn func_sw(state: &mut state_t, insn: &mut insn_t) {
 fn func_sd(state: &mut state_t, insn: &mut insn_t) {
     let addr: u64 = (state.gp_regs[insn.rs1 as usize] as i64 + insn.imm as i64) as u64;
     let value: u64 = state.gp_regs[insn.rs2 as usize];
+    println!("saved {} to addr={:x}({})", value, to_host_addr(addr), addr);
     unsafe {
         let ptr = to_host_addr(addr) as *mut u64;
         std::ptr::write(ptr, value);
@@ -433,7 +456,10 @@ fn func_jalr(state: &mut state_t, insn: &mut insn_t) {
             false => 4,
         };
     let target = (state.gp_regs[insn.rs1 as usize] as i64 + insn.imm as i64) as u64;
+    // println!("rs1={} [rs1]={:x} insn.imm={:x}", insn.rs1 as usize, state.gp_regs[insn.rs1 as usize], insn.imm as i64);
+    // println!("func_jalr: target={}", target);
     state.reenter_pc = target & !1;
+    // println!("reenter_pc={}", state.reenter_pc);
     state.exit_reason = exit_reason_t::indirect_branch;
 }
 
@@ -1007,13 +1033,25 @@ static interp_funcs: [interp_func_t; insn_type_t::num_insns as usize] = [
 
 pub fn exec_block_interp(state: &mut state_t) {
     loop {
+        println!("pc: {:#x}", state.pc);
         let mut insn: insn_t = unsafe { mem::zeroed() };
         let insn_data = unsafe { std::ptr::read_unaligned(to_host_addr(state.pc) as *const u32) };
         insn_decode(&mut insn, insn_data);
 
+        // println!(">>>0x08880201bbc0: {}", unsafe {*(0x08880201bbc0 as *const u64)});
+        // println!(">>>222: {}", unsafe {*(0x088802012fd8 as *const u64)});
+
         interp_funcs[insn.type_ as usize](state, &mut insn);
 
         state.gp_regs[gp_reg_type_t::zero as usize] = 0;
+
+        print!("state.gp_regs: ");
+        for i in 0..32 {
+            print!(" x{}: {}", i, state.gp_regs[i]);
+        }
+        println!();
+        println!("reenter_pc: {:#x}", state.reenter_pc);
+        println!();
 
         if insn.cont {
             break;
