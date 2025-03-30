@@ -2,7 +2,10 @@ use std::{collections::HashMap, sync::LazyLock};
 
 use libc::{O_APPEND, O_CREAT, O_EXCL, O_RDONLY, O_RDWR, O_TRUNC, O_WRONLY};
 
-use crate::{machine::{machine_t, to_host_addr}, reg::gp_reg_type_t};
+use crate::{
+    machine::{machine_t, to_host_addr},
+    reg::gp_reg_type_t,
+};
 
 // Copied from https://github.com/riscv-software-src/riscv-pk
 
@@ -76,7 +79,7 @@ pub type syscall_t = fn(&mut machine_t) -> u64;
 
 pub static SYSCALL_TABLE: LazyLock<HashMap<u32, syscall_t>> = LazyLock::new(|| {
     let mut table: HashMap<u32, syscall_t> = HashMap::new();
-    
+
     table.insert(SYS_EXIT, sys_exit);
     table.insert(SYS_EXIT_GROUP, sys_exit);
     table.insert(SYS_READ, sys_read);
@@ -123,7 +126,6 @@ pub static SYSCALL_TABLE: LazyLock<HashMap<u32, syscall_t>> = LazyLock::new(|| {
     table
 });
 
-
 pub static OLD_SYSCALL_TABLE: LazyLock<HashMap<u32, syscall_t>> = LazyLock::new(|| {
     let mut table: HashMap<u32, syscall_t> = HashMap::new();
     table.insert(SYS_OPEN - OLD_SYSCALL_THRESHOLD, sys_open);
@@ -138,26 +140,25 @@ pub static OLD_SYSCALL_TABLE: LazyLock<HashMap<u32, syscall_t>> = LazyLock::new(
 });
 
 fn sys_unimplemented(m: &mut machine_t) -> u64 {
-    panic!("Unimplemented syscall: {}", m.state.gp_regs[gp_reg_type_t::a7 as usize]);
+    panic!(
+        "Unimplemented syscall: {}",
+        m.state.gp_regs[gp_reg_type_t::a7 as usize]
+    );
 }
 
 fn sys_exit(m: &mut machine_t) -> u64 {
     let code: u64 = m.state.gp_regs[gp_reg_type_t::a0 as usize];
 
-    unsafe { libc::exit(
-        code as libc::c_int
-    ) };
+    unsafe { libc::exit(code as libc::c_int) };
 }
 
 fn sys_close(m: &mut machine_t) -> u64 {
     let fd: u64 = m.state.gp_regs[gp_reg_type_t::a0 as usize];
 
-    println!("sys_close, fd: {}", fd);
+    // println!("sys_close, fd: {}", fd);
 
     if fd > 2 {
-        return unsafe { libc::close(
-            fd as libc::c_int
-        ) as u64 }
+        return unsafe { libc::close(fd as libc::c_int) as u64 };
     };
     return 0;
 }
@@ -166,36 +167,36 @@ fn sys_write(m: &mut machine_t) -> u64 {
     let fd: u64 = m.state.gp_regs[gp_reg_type_t::a0 as usize];
     let ptr: u64 = m.state.gp_regs[gp_reg_type_t::a1 as usize];
     let len: u64 = m.state.gp_regs[gp_reg_type_t::a2 as usize];
-    println!("sys_write, fd: {}, ptr: {:#x}, len: {}", fd, to_host_addr(ptr), len);
+    // println!("sys_write, fd: {}, ptr: {:#x}, len: {}", fd, to_host_addr(ptr), len);
 
-    return unsafe { libc::write(
-        fd as libc::c_int,
-        to_host_addr(ptr) as *const libc::c_void,
-        len as libc::size_t
-    ) } as u64;
+    return unsafe {
+        libc::write(
+            fd as libc::c_int,
+            to_host_addr(ptr) as *const libc::c_void,
+            len as libc::size_t,
+        )
+    } as u64;
 }
 
 fn sys_fstat(m: &mut machine_t) -> u64 {
     let fd: u64 = m.state.gp_regs[gp_reg_type_t::a0 as usize];
     let addr: u64 = m.state.gp_regs[gp_reg_type_t::a1 as usize];
-    println!("sys_fstat, fd: {}, addr: {}", fd, addr);
+    // println!("sys_fstat, fd: {}, addr: {}", fd, addr);
 
-    let ret = unsafe { libc::fstat(
-        fd as libc::c_int,
-        to_host_addr(addr) as *mut libc::stat
-    ) };
+    let ret = unsafe { libc::fstat(fd as libc::c_int, to_host_addr(addr) as *mut libc::stat) };
 
-    let stat_info: libc::stat = unsafe { *(to_host_addr(addr) as *mut libc::stat).as_mut().unwrap() };
-    println!("sys_fstat Device: {}", stat_info.st_dev);
-    println!("sys_fstat Inode: {}", stat_info.st_ino);
-    println!("sys_fstat Mode: {}", stat_info.st_mode);
-    println!("sys_fstat Number of hard links: {}", stat_info.st_nlink);
-    println!("sys_fstat Owner's user ID: {}", stat_info.st_uid);
-    println!("sys_fstat Owner's group ID: {}", stat_info.st_gid);
-    println!("sys_fstat Total size, in bytes: {}", stat_info.st_size);
-    println!("sys_fstat Last access time: {}", stat_info.st_atime);
-    println!("sys_fstat Last modification time: {}", stat_info.st_mtime);
-    println!("sys_fstat Last status change time: {}", stat_info.st_ctime);
+    let stat_info: libc::stat =
+        unsafe { *(to_host_addr(addr) as *mut libc::stat).as_mut().unwrap() };
+    // println!("sys_fstat Device: {}", stat_info.st_dev);
+    // println!("sys_fstat Inode: {}", stat_info.st_ino);
+    // println!("sys_fstat Mode: {}", stat_info.st_mode);
+    // println!("sys_fstat Number of hard links: {}", stat_info.st_nlink);
+    // println!("sys_fstat Owner's user ID: {}", stat_info.st_uid);
+    // println!("sys_fstat Owner's group ID: {}", stat_info.st_gid);
+    // println!("sys_fstat Total size, in bytes: {}", stat_info.st_size);
+    // println!("sys_fstat Last access time: {}", stat_info.st_atime);
+    // println!("sys_fstat Last modification time: {}", stat_info.st_mtime);
+    // println!("sys_fstat Last status change time: {}", stat_info.st_ctime);
 
     ret as u64
 
@@ -215,10 +216,7 @@ fn sys_gettimeofday(m: &mut machine_t) -> u64 {
         std::ptr::null_mut()
     };
 
-    return unsafe { libc::gettimeofday(
-        tv,
-        tz
-    ) } as u64;
+    return unsafe { libc::gettimeofday(tv, tz) } as u64;
 }
 
 fn sys_brk(m: &mut machine_t) -> u64 {
@@ -229,12 +227,11 @@ fn sys_brk(m: &mut machine_t) -> u64 {
     assert!(addr >= m.mmu.base);
     let incr: i64 = addr as i64 - m.mmu.alloc as i64;
 
-    println!("sys_brk, addr: {:#x}, incr: {} = {} - {}", to_host_addr(addr), incr, addr, m.mmu.alloc );
+    // println!("sys_brk, addr: {:#x}, incr: {} = {} - {}", to_host_addr(addr), incr, addr, m.mmu.alloc );
 
-    m.mmu.mmu_alloc(incr);    
+    m.mmu.mmu_alloc(incr);
     return addr;
 }
-
 
 // the O_* macros is OS dependent.
 // here is a workaround to convert newlib flags to the host.
@@ -280,12 +277,14 @@ fn sys_openat(m: &mut machine_t) -> u64 {
     let flags: u64 = m.state.gp_regs[gp_reg_type_t::a2 as usize];
     let mode: u64 = m.state.gp_regs[gp_reg_type_t::a3 as usize];
 
-    return unsafe { libc::openat(
-        dirfd as libc::c_int,
-        to_host_addr(nameptr) as *const libc::c_char,
-        convert_flags(flags as i32) as libc::c_int,
-        mode as libc::c_int,
-    ) } as u64;
+    return unsafe {
+        libc::openat(
+            dirfd as libc::c_int,
+            to_host_addr(nameptr) as *const libc::c_char,
+            convert_flags(flags as i32) as libc::c_int,
+            mode as libc::c_int,
+        )
+    } as u64;
 }
 
 fn sys_open(m: &mut machine_t) -> u64 {
@@ -293,11 +292,13 @@ fn sys_open(m: &mut machine_t) -> u64 {
     let flags: u64 = m.state.gp_regs[gp_reg_type_t::a1 as usize];
     let mode: u64 = m.state.gp_regs[gp_reg_type_t::a2 as usize];
 
-    return unsafe { libc::open(
-        to_host_addr(nameptr) as *const libc::c_char,
-        convert_flags(flags as i32) as libc::c_int,
-        mode as libc::c_int,
-    ) } as u64;
+    return unsafe {
+        libc::open(
+            to_host_addr(nameptr) as *const libc::c_char,
+            convert_flags(flags as i32) as libc::c_int,
+            mode as libc::c_int,
+        )
+    } as u64;
 }
 
 fn sys_lseek(m: &mut machine_t) -> u64 {
@@ -305,11 +306,13 @@ fn sys_lseek(m: &mut machine_t) -> u64 {
     let offset: u64 = m.state.gp_regs[gp_reg_type_t::a1 as usize];
     let whence: u64 = m.state.gp_regs[gp_reg_type_t::a2 as usize];
 
-    return unsafe { libc::lseek(
-        fd as libc::c_int,
-        offset as libc::off_t,
-        whence as libc::c_int
-    ) } as u64;
+    return unsafe {
+        libc::lseek(
+            fd as libc::c_int,
+            offset as libc::off_t,
+            whence as libc::c_int,
+        )
+    } as u64;
 }
 
 fn sys_read(m: &mut machine_t) -> u64 {
@@ -317,9 +320,11 @@ fn sys_read(m: &mut machine_t) -> u64 {
     let bufptr: u64 = m.state.gp_regs[gp_reg_type_t::a1 as usize];
     let count: u64 = m.state.gp_regs[gp_reg_type_t::a2 as usize];
 
-    return unsafe { libc::read(
-        fd as libc::c_int,
-        to_host_addr(bufptr) as *mut libc::c_void,
-        count as libc::size_t
-    ) } as u64;
+    return unsafe {
+        libc::read(
+            fd as libc::c_int,
+            to_host_addr(bufptr) as *mut libc::c_void,
+            count as libc::size_t,
+        )
+    } as u64;
 }

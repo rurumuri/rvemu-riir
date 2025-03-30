@@ -23,10 +23,9 @@ fn main() {
 
     let mut machine: machine::machine_t = machine::machine_t::new();
     machine.machine_load_program(args_str[1]);
-    println!("sysx {:#x}", machine.mmu.alloc);
+    // println!("sysx {:#x}", machine.mmu.alloc);
     machine.machine_setup(args.len() as u64, &args_str);
-    println!("sysx {:#x}", machine.mmu.alloc);
-
+    // println!("sysx {:#x}", machine.mmu.alloc);
 
     loop {
         let reason: exit_reason_t = machine.machine_step();

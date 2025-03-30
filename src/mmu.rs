@@ -118,15 +118,17 @@ impl mmu_t {
         assert!(self.alloc >= self.base);
 
         if size > 0 && self.alloc > to_guest_addr(self.host_alloc) {
-
-            if unsafe { libc::mmap(
-                self.host_alloc as *mut libc::c_void,
-                round_up(size.abs() as u64, page_size as u64) as usize,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_FIXED,
-                -1,
-                0,
-            ) } == libc::MAP_FAILED {
+            if unsafe {
+                libc::mmap(
+                    self.host_alloc as *mut libc::c_void,
+                    round_up(size.abs() as u64, page_size as u64) as usize,
+                    libc::PROT_READ | libc::PROT_WRITE,
+                    libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_FIXED,
+                    -1,
+                    0,
+                )
+            } == libc::MAP_FAILED
+            {
                 panic!("mmap failed");
             }
 

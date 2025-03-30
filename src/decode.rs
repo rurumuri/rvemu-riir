@@ -6,11 +6,11 @@ fn quadrant(data: u32) -> u32 {
 }
 
 pub fn insn_decode(insn: &mut insn_t, data: u32) {
-    for i in (0..32).rev() {
-        let bit = (data >> i) & 1;
-        print!("{}", bit);
-    }
-    println!();
+    // for i in (0..32).rev() {
+    //     let bit = (data >> i) & 1;
+    //     print!("{}", bit);
+    // }
+    // println!();
     let quadrant = quadrant(data);
     match quadrant {
         0x0 => {
@@ -660,6 +660,6 @@ pub fn insn_decode(insn: &mut insn_t, data: u32) {
     }
     // println!("insn_type={:?}", insn.type_ as insn_type_t);
     // println!("type={:#}", insn.type_ as u32);
-    println!("{:?}", insn);
+    // println!("{:?}", insn);
     // println!("{} {} {} {} {} {} {} {} {}", insn.rd, insn.rs1, insn.rs2, insn.rs3, insn.imm, insn.csr, insn.type_ as u32, insn.rvc as u32, insn.cont as u32);
 }
