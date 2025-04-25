@@ -459,7 +459,7 @@ impl insn_t {
             | (imm98 << 8)
             | (imm4 << 4)
             | (imm11 << 11);
-        self.imm = ((imm as i32) << 21) >> 21;
+        self.imm = ((imm as i32) << 20) >> 20;
         self.rvc = true;
     }
 
@@ -509,7 +509,7 @@ impl insn_t {
 
         let imm = (imm76 << 6) | (imm52 << 2);
 
-        self.imm = (imm as i32) << 26 >> 26;
+        self.imm = ((imm as u32) << 24 >> 24) as i32;
         self.rs2 = rc2(data);
         self.rvc = true;
     }
